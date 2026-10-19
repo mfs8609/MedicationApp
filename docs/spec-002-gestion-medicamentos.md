@@ -1,6 +1,6 @@
 # SPEC-002: Gestión de medicamentos y programación de tomas
 
-Estado: propuesta para revisión; implementación pendiente.
+Estado: implementada; compilación y pruebas unitarias verificadas. Pruebas instrumentadas y validación en dispositivo pendientes.
 
 Fecha: 18 de octubre de 2026.
 
@@ -197,14 +197,53 @@ Priorizar pruebas unitarias para recurrencia/validaciones y pruebas instrumentad
 - [ ] La aplicación permite registrar y editar al menos dos medicamentos con programaciones independientes.
 - [ ] Se pueden desactivar y reactivar sin perder datos.
 - [ ] Los datos sobreviven al cierre/reinicio de la aplicación.
-- [ ] Se calcula una próxima toma correcta para DAILY, WEEKLY y EVERY_N_DAYS.
+- [x] Se calcula una próxima toma correcta para DAILY, WEEKLY y EVERY_N_DAYS.
 - [ ] Los formularios rechazan datos inválidos con mensajes útiles.
-- [ ] No se implementan alarmas, registro de tomas ni servicios remotos.
-- [ ] `:app:assembleDebug` y `:app:lintDebug` terminan satisfactoriamente o se documenta el bloqueo real.
-- [ ] `:app:testDebugUnitTest` se ejecuta cuando las pruebas estén disponibles.
-- [ ] Las verificaciones instrumentadas se realizan en dispositivo/emulador disponible o se reportan como pendientes.
-- [ ] La entrega resume archivos modificados, decisiones técnicas, pruebas y pendientes, sin atribuir resultados no comprobados.
+- [x] No se implementan alarmas, registro de tomas ni servicios remotos.
+- [x] `:app:assembleDebug` y `:app:lintDebug` terminan satisfactoriamente o se documenta el bloqueo real.
+- [x] `:app:testDebugUnitTest` se ejecuta cuando las pruebas estén disponibles.
+- [x] Las verificaciones instrumentadas se realizan en dispositivo/emulador disponible o se reportan como pendientes.
+- [x] La entrega resume archivos modificados, decisiones técnicas, pruebas y pendientes, sin atribuir resultados no comprobados.
 
 ## Autorización y seguimiento
 
 Documento elaborado a partir del alcance conversado. Su incorporación al repositorio **no autoriza implementar código automáticamente**; la ejecución se solicitará por separado. Mantener el registro de ejecución y las verificaciones de SPEC-001 como referencia, sin asumir que sustituyen las pruebas de esta entrega.
+
+## Registro de ejecución — 18 de octubre de 2026
+
+El usuario autorizó implementar esta entrega mediante «ejecuta el spec-002».
+
+### Cambios y decisiones
+
+- `domain/MedicationPlan`, `PlanValidator` y `NextOccurrence`: modelo, validación independiente y cálculo sin acceso al reloj, Room ni Activity.
+- `data/MedicationDatabase`: entidades Room, DAO transaccional, relaciones, conversión explícita de valores y executor. Esquema inicial versionado en `app/schemas`; no se habilitaron migraciones destructivas.
+- `MainActivity`, `EditorActivity`, `UiSupport` y layouts XML: listado activo/inactivo, formulario reutilizable, selección de días y horas, errores junto al campo, confirmación al descartar y conservación de borradores/guardado en cambios de configuración. Textos en recursos en español.
+- Room 2.8.4 runtime/compiler con `annotationProcessor`; compilación comprobada con AGP 9.2.0, Gradle 9.4.1 y JDK portable 21. [Referencia oficial de Room](https://developer.android.com/jetpack/androidx/releases/room).
+- Fechas ISO locales, horas `HH:mm`, días ISO separados por comas y cantidad decimal como texto canónico. Los campos específicos no aplicables se limpian antes de persistir. README documenta las representaciones y resolución de cambios de horario estacional.
+- Manifest sin permisos; editor no exportado. Room incorpora su servicio interno no exportado `MultiInstanceInvalidationService`; no se implementaron servicios remotos ni de recordatorios.
+- Copias/transferencias: deshabilitadas y excluidas explícitamente mediante Manifest y `res/xml/data_extraction_rules.xml`. La base permanece en almacenamiento privado, sin cifrado adicional de aplicación. Autocompletado deshabilitado en los campos.
+
+### Comprobaciones ejecutadas
+
+```powershell
+.\gradlew.bat :app:assembleDebug :app:lintDebug :app:testDebugUnitTest :app:assembleDebugAndroidTest --console=plain
+```
+
+- Resultado: `BUILD SUCCESSFUL`.
+- 17 pruebas unitarias, 0 fallos y 0 errores: 9 de próxima ocurrencia y 8 de validación. Cubren medianoche, igualdad exacta del instante, semanas, cambio de mes, inicio/fin inclusivos, inactivación, actualización de horario, cambio estacional, errores de formulario y normalización.
+- Seis pruebas instrumentadas de Room compiladas: nombres repetidos/reapertura, edición/activación, rollback ante fallo de inserción, rechazo de plan inválido, unicidad y claves foráneas. **No ejecutadas**: `adb devices -l` no detectó dispositivos.
+- Lint: 0 errores, 6 advertencias, sin baseline ni supresiones generales. Cinco avisos de versiones más recientes (targetSdk, Gradle, compileSdk y dos artefactos Room) se conservan porque esta entrega fija una combinación compilada y compatible. El aviso de icono monocromo afecta al recurso base; hay variante monocroma para API 33+. No impiden la compilación.
+- APK debug: `app/build/outputs/apk/debug/app-debug.apk`. AAPT2 confirma el paquete y SDK previstos y ausencia de permisos; firma debug verificada mediante apksigner.
+- README actualizado con pruebas reproducibles, política de datos y decisiones de persistencia.
+
+### Pendientes de comprobación en Android
+
+Los primeros criterios de aceptación de interfaz/persistencia permanecen sin marcar hasta probarlos en Android; su implementación está incluida. Ejecutar las seis pruebas instrumentadas y comprobar manualmente:
+
+1. Crear dos medicamentos ficticios con igual nombre y programaciones distintas; cerrar y volver a abrir la aplicación.
+2. Editar campos/horarios y verificar la próxima toma; desactivar, consultar inactivos y reactivar sin pérdida de datos.
+3. Rechazar entradas inválidas, horas repetidas, semana sin días y fin anterior al inicio; revisar mensajes y accesibilidad.
+4. Rotar el formulario y usar volver/cancelar con cambios pendientes; comprobar confirmación y persistencia del borrador.
+5. Revisar barras del sistema, teclado, tamaños de texto y representación horaria en el teléfono objetivo.
+
+No se afirma ejecución visual, persistencia en dispositivo ni atomicidad comprobada contra SQLite real hasta ejecutar las pruebas instrumentadas. No se crearon commits ni se subieron cambios a remoto para esta entrega.

@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<View xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent" />
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/main_root" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="16dp">
+  <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/medications" android:textSize="26sp" android:textStyle="bold" />
+  <Button android:id="@+id/add" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/add_medication" />
+  <Button android:id="@+id/filter" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/show_inactive" />
+  <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/programmed_only" />
+  <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content" android:accessibilityLiveRegion="polite" />
+  <Button android:id="@+id/retry" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/retry" android:visibility="gone" />
+  <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+    <LinearLayout android:id="@+id/list" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical"></LinearLayout>
+  </ScrollView>
+</LinearLayout>
